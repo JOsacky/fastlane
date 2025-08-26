@@ -562,7 +562,7 @@ module Frameit
 
       fonts = @config[key.to_s]['fonts']
       if fonts        
-        fonts.each_with_index do |font, index|          
+        fonts.each do |font|
           if font['supported']
             font['supported'].each do |language|
               if screenshot.language == language
