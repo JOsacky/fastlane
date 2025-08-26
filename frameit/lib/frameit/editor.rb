@@ -438,8 +438,8 @@ module Frameit
 
         current_font = font(key)
         text = fetch_text(key)
-        UI.verbose("Using #{current_font} as font the #{key} of #{screenshot.path}") if current_font
-        UI.verbose("Adding text '#{text}'")
+        UI.verbose("Final font selection for #{key}: '#{current_font || 'system default'}'")
+        UI.verbose("Adding text '#{text}' for #{key}")
 
         text.gsub!('\n', "\n")
         text.gsub!(/(?<!\\)(')/) { |s| "\\#{s}" } # escape unescaped apostrophes with a backslash
@@ -551,27 +551,39 @@ module Frameit
 
     # The font we want to use
     def font(key)
+      UI.verbose("Font selection for key '#{key}' on screenshot: #{screenshot.path}")
+      UI.verbose("Screenshot language: '#{screenshot.language}'")
+      
       single_font = @config[key.to_s]['font']
-      return single_font if single_font
+      if single_font
+        UI.verbose("Using single font configuration: '#{single_font}'")
+        return single_font
+      end
 
       fonts = @config[key.to_s]['fonts']
-      if fonts
-        fonts.each do |font|
+      if fonts        
+        fonts.each_with_index do |font, index|          
           if font['supported']
             font['supported'].each do |language|
               if screenshot.language == language
+                UI.verbose("  ✓ Language match found! Using font: '#{font['font']}'")
                 return font["font"]
               end
             end
+            UI.verbose("  ✗ No language match for this font")
           else
             # No `supported` array, this will always be true
-            UI.verbose("Found a font with no list of supported languages, using this now")
+            UI.verbose("  No supported languages specified - using as fallback font: '#{font['font']}'")
             return font["font"]
           end
         end
+        
+        UI.verbose("No matching font found in fonts array for language '#{screenshot.language}'")
+      else
+        UI.verbose("No fonts configuration found for key '#{key}'")
       end
 
-      UI.verbose("No custom font specified for #{screenshot}, using the default one")
+      UI.verbose("No custom font specified for #{screenshot}, using the default system font")
       return nil
     end
   end
